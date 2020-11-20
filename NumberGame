@@ -1,0 +1,107 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Project_01_Number_Game
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Let's play a game called 'GUESS THAT NUMBER!'");
+            while (true)
+            {
+                Random random = new Random();
+                int n = random.Next(1, 101);
+                int tries = 0;
+                Console.WriteLine("I am thinking of a number 1 through 100. What number am I thinking of?");
+                Console.Write("Number: ");
+                string number = Console.ReadLine();
+                int guess;
+                bool result = Int32.TryParse(number, out guess);
+                tries++;
+                while (!result)
+                {
+                    Console.WriteLine("Oops! Please enter an integer between 1 and 100!");
+                    Console.Write("Number: ");
+                    number = Console.ReadLine();
+                    result = Int32.TryParse(number, out guess);
+                }
+                guess = Convert.ToInt32(number);
+                while (n != guess)
+                {
+                    if (guess < 1 || guess > 100)
+                    {
+                        Console.WriteLine("Oops! Please enter an integer between 1 and 100!");
+                        Console.Write("Number: ");
+                        number = Console.ReadLine();
+                        result = Int32.TryParse(number, out guess);
+                        while (!result)
+                        {
+                            Console.WriteLine("Oops! Please enter an integer between 1 and 100!");
+                            Console.Write("Number: ");
+                            number = Console.ReadLine();
+                            result = Int32.TryParse(number, out guess);
+                        }
+                        guess = Convert.ToInt32(number);
+                    }
+                    if (n < guess)
+                    {
+                        Console.WriteLine("The number I'm thinking of is lower.");
+                        Console.Write("Number: ");
+                        number = Console.ReadLine();
+                        result = Int32.TryParse(number, out guess);
+                        while (!result)
+                        {
+                            Console.WriteLine("Oops! Please enter an integer between 1 and 100!");
+                            Console.Write("Number: ");
+                            number = Console.ReadLine();
+                            result = Int32.TryParse(number, out guess);
+                        }
+                        guess = Convert.ToInt32(number);
+                        tries++;
+                    }
+                    if (n > guess)
+                    {
+                        Console.WriteLine("The number I'm thinking of is higher.");
+                        Console.Write("Number: ");
+                        number = Console.ReadLine();
+                        result = Int32.TryParse(number, out guess);
+                        while (!result)
+                        {
+                            Console.WriteLine("Oops! Please enter an integer between 1 and 100!");
+                            Console.Write("Number: ");
+                            number = Console.ReadLine();
+                            result = Int32.TryParse(number, out guess);
+                        }
+                        guess = Convert.ToInt32(number);
+                        tries++;
+                    }
+                }
+                if (n == guess)
+                {
+                    Console.WriteLine("Congrats you won the game!");
+                    Console.WriteLine("I was thinking of the number '{0}'.", n);
+                    Console.WriteLine("It took you {0} times to get the number right!", tries);
+                }
+                while (true)
+                {
+                    Console.WriteLine("Do you want to play again [Yes/No]?");
+                    string answer = Console.ReadLine();
+                    if (answer == "Yes")
+                    {
+                        Console.WriteLine("LET'S PLAY AGAIN!");
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Goodbye!");
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
