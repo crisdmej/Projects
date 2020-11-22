@@ -1,0 +1,202 @@
+import pygame
+import sys
+import random
+import os
+import neat
+
+def draw_floor():
+    screen.blit(floor,(floor_x_pos, 600))
+    screen.blit(floor, (floor_x_pos+500, 600))
+
+def create_pipe():
+    random_pipe_pos = random.choice(pipe_height)
+    bottom_pipe = pipe_green.get_rect(midtop = (550, random_pipe_pos))
+    top_pipe = pipe_green.get_rect(midbottom = (550, random_pipe_pos - 200))
+    return bottom_pipe, top_pipe
+
+def move_pipes(pipes):
+    for pipe in pipes:
+        pipe.centerx -= 1
+    return pipes
+
+def draw_pipes(pipes):
+    for pipe in pipes:
+        if pipe.bottom >= 600:
+            screen.blit(pipe_green, pipe)
+        else:
+            flip_pipe = pygame.transform.flip(pipe_green, False, True)
+            screen.blit(flip_pipe, pipe)
+
+def check_collision(pipes):
+    for pipe in pipes:
+        if bird_rect.colliderect(pipe):
+            bird_death_sound.play() 
+            return False
+    if bird_rect.top <= 5:
+        bird_rect.top = 5
+    if bird_rect.bottom >= 600:
+        bird_death_sound.play()
+        return False 
+    return True
+
+def rotate_bird(bird):
+    new_bird = pygame.transform.rotozoom(bird, -bird_movement * 3, 1)
+    return new_bird
+
+def bird_animation():
+    new_bird = bird_frames[bird_index]
+    new_bird_rect = new_bird.get_rect(center = (100, bird_rect.centery))
+    return new_bird, new_bird_rect
+
+def score_display(game_state):
+    if game_state == 'main_game':
+        score_surface = game_font.render(str(int(score)), True, (255, 255, 255))
+        score_rect = score_surface.get_rect(center = (250, 100))
+        screen.blit(score_surface, score_rect)
+
+    if game_state == 'game_over':
+        score_surface = game_font.render(f'Score: {int(score)}', True, (255, 255, 255))
+        score_rect = score_surface.get_rect(center = (250, 100))
+        screen.blit(score_surface, score_rect)
+
+        high_score_surface = game_font.render(f'High Score: {int(high_score)}', True, (255, 255, 255))
+        high_score_rect = high_score_surface.get_rect(center = (250, 550))
+        screen.blit(high_score_surface, high_score_rect)
+
+def update_score(score, high_score):
+    if score > high_score:
+        high_score = score
+    return high_score
+
+def run(config_path):
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                         config_file)
+
+    p.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
+
+    winner = p.run(eval_genomes, 50)
+
+    print('\nBest genome:\n{!s}'.format(winner))
+
+#pygame.mixer.init(frequency = 32000, size = 16, channels = 1, buffer = 512)
+pygame.init()
+screen = pygame.display.set_mode((500, 700))
+clock = pygame.time.Clock()
+game_font = pygame.font.Font('04B_19.ttf',40)
+
+#Game variables
+gravity = 0.2
+bird_movement = 0
+game_active = False
+score = 0
+high_score = 0
+count = False
+temp = 4
+
+background = pygame.image.load("images/background-day.png").convert()
+background = pygame.transform.scale(background, (500, 700))
+
+floor = pygame.image.load("images/base.png").convert()
+floor = pygame.transform.scale(floor, (700, 100))
+floor_x_pos = 0
+
+bird_downflap = pygame.image.load("images/yellowbird-downflap.png").convert_alpha()
+bird_midflap = pygame.image.load("images/yellowbird-midflap.png").convert_alpha()
+bird_upflap = pygame.image.load("images/yellowbird-upflap.png").convert_alpha()
+bird_frames = [bird_downflap, bird_midflap, bird_upflap]
+bird_index = 0
+bird_yellow = bird_frames[bird_index]
+bird_rect = bird_yellow.get_rect(center = (100, 350))
+
+BIRDFLAP = pygame.USEREVENT + 1
+pygame.time.set_timer(BIRDFLAP, 200)
+
+
+#bird_yellow = pygame.image.load("images/yellowbird-midflap.png").convert_alpha()
+#bird_yellow = pygame.transform.scale(bird_yellow, (51, 36))
+#bird_rect = bird_yellow.get_rect(center = (100, 350))
+
+pipe_green = pygame.image.load("images/pipe-green.png").convert()
+#pipe_green = pygame.transform.scale(pipe_green, (52, 500))
+pipe_list = []
+SPAWNPIPE = pygame.USEREVENT
+pygame.time.set_timer(SPAWNPIPE, 2000)
+pipe_height = [300, 350, 400, 450, 500]
+
+background_message = pygame.image.load("images/message.png").convert_alpha ()
+#background_message = pygame.transform.scale("")
+beackground_message_rect = background_message.get_rect(center = (250, 350))
+
+bird_flap_sound = pygame.mixer.Sound('sound/sfx_wing.wav')
+bird_death_sound = pygame.mixer.Sound('sound/sfx_hit.wav')
+score_sound = pygame.mixer.Sound('sound/sfx_point.wav')
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                bird_movement = 0
+                bird_movement -= 6
+                bird_flap_sound.play()
+            
+            if event.key == pygame.K_SPACE and game_active == False:
+                game_active = True
+                pipe_list.clear()
+                bird_rect.center = (100, 350)
+                bird_movement = 0
+                score = 0
+                count = False
+                floor_x_pos = 0
+
+        if event.type == BIRDFLAP:
+            bird_index += 1
+            if bird_index > 2:
+                bird_index = 0
+            bird_yellow, bird_rect = bird_animation()
+
+        if event.type == SPAWNPIPE:
+            pipe_list.extend(create_pipe())
+
+    screen.blit(background, (0,0))
+
+    if game_active:
+        #Bird
+        bird_movement += gravity
+        rotated_bird = rotate_bird(bird_yellow)
+        bird_rect.centery += bird_movement
+        screen.blit(rotated_bird, bird_rect)
+        game_active = check_collision(pipe_list)
+
+        #Pipes
+        pipe_list = move_pipes(pipe_list)
+        draw_pipes(pipe_list)
+
+        #Score
+        if (len(pipe_list) > temp):
+            count = True
+            temp += 2
+        if count:
+            score += 1
+            score_sound.play()
+            count = False
+        score_display('main_game')
+    else:
+        screen.blit(background_message, beackground_message_rect)
+        high_score = update_score(score, high_score)
+        score_display('game_over')
+
+    #Floor
+    floor_x_pos -= 1
+    draw_floor()
+
+    if floor_x_pos <= -500:
+        floor_x_pos = 0
+
+    pygame.display.update()
+    clock.tick(120)
